@@ -66,7 +66,7 @@
 </template>
 
 <script>
-import axiosMock from "@/utils/axiosMock";
+import {axiosMock} from "@/utils/axiosMock";
 import {mockSubmissions} from "@/utils/data/submissions";
 import axios from "axios";
 import vSelect from 'vue-select'

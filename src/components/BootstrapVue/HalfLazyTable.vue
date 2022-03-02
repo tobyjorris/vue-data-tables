@@ -1,5 +1,5 @@
 <template>
- <div class="container mt-5">
+ <div class="container mt-5 mb-5">
     <div class="row">
       <div class="col">
        <b-table
@@ -11,14 +11,14 @@
         sort-icon-left
         hover
         small
-    >
+        >
           <template v-if="firstRowMenu" #top-row>
             <td v-for="field in fields" :key="field.key">
               <template v-if="field.key === 'notified_body'">
-                <v-select v-model="filters[field.key]" :options="nbOptions"/>
+                <v-select v-model="filters[field.key]" :options="nbOptions" :disabled="awaitingFullData"/>
               </template>
               <template v-else>
-                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"></b-input>
+                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search" :disabled="awaitingFullData"></b-input>
               </template>
             </td>
           </template>
@@ -37,19 +37,25 @@
           v-model="currentPage"
           :total-rows="totalRows"
           :per-page="5"
+          :disabled="awaitingFullData"
           align="fill"
           size="sm"
           class="my-0"
         ></b-pagination>
       </div>
     </div>
+   <div class="row">
+     <div class="col">
+       <b-button class="btn-success" @click="retrieveDataHalfLazy">Reset Table</b-button>
+       <div>Actual Count of Submissions in Table: {{submissions.length}}</div>
+     </div>
+   </div>
   </div>
 </template>
 
 <script>
 import vSelect from "vue-select";
-import axiosMock from "@/utils/axiosMock";
-import axiosMockDelay from '@/utils/axiosMockDelay'
+import {axiosMock} from "@/utils/axiosMock";
 import {mockSubmissions} from "@/utils/data/submissions";
 import {mockSubmissionsTwo} from "@/utils/data/submissionsTwo";
 import axios from "axios";
@@ -60,7 +66,19 @@ export default {
     vSelect
   },
   props: {
-    firstRowMenu: Boolean
+    firstRowMenu: {
+      type: Boolean,
+      default: false
+    },
+    perPage: {
+      type: Number,
+      required: true
+    },
+    apiURL: {
+      type: String,
+      required: true
+    }
+
   },
   computed: {
     computedFilters() {
@@ -101,32 +119,47 @@ export default {
     }
   },
   mounted() {
-    this.awaitingFullData = true
-    try {
-      this.getFirstSubmissions()
-      this.getSecondSubmissions()
-    }
-    catch (error) {
-      console.log(error)
-    }
-
-    this.awaitingFullData = false
+    this.retrieveDataHalfLazy()
   },
   methods: {
-    async getFirstSubmissions() {
-      axiosMock.onGet("/submissions").reply(200, mockSubmissions)
-
-      await axios.get('/submissions').then(response => {
-        this.totalRows = response.data.totalRecords
-        this.submissions = response.data.submissions
-      })
+    async retrieveDataHalfLazy() {
+      this.submissions = []
+      this.awaitingFullData = true
+      await this.getFirstSubmissions()
+      await this.getSecondSubmissions()
+      this.awaitingFullData = false
     },
-    async getSecondSubmissions() {
-      axiosMockDelay.onGet("/submissions-two").reply(200, mockSubmissionsTwo)
+    getFirstSubmissions() {
+      console.log('started first call')
 
-      await axios.get('/submissions-two').then(response => {
-        this.submissions = this.submissions.concat(response.data.submissions)
-      })
+      axiosMock.onGet(`/submissions?records=${this.perPage}`).reply(200, mockSubmissions)
+
+      const request = axios.get('/submissions')
+
+      request
+        .then(response => {
+          console.log('first call finished')
+          this.totalRows = response.data.totalRecords
+          this.submissions = response.data.submissions
+        })
+        .catch(error => console.log('error', error))
+
+      return request
+    },
+    getSecondSubmissions() {
+      console.log('started second call')
+      axiosMock.onGet("/submissions-two").reply(200, mockSubmissionsTwo)
+
+      const request = axios.get('/submissions-two')
+
+      request
+        .then(response => {
+          console.log('second call finished')
+          this.submissions = this.submissions.concat(response.data.submissions)
+        })
+        .catch(error => console.log('error', error))
+
+      return request
     },
     returnProductsString(productsArray) {
       //Handles displaying a nested array of data in a column as a comma seperated string
@@ -155,5 +188,15 @@ export default {
 </script>
 
 <style scoped>
+#bv-dynamic-table {
+  font-size: .8rem;
+}
 
+.vs__dropdown-toggle {
+  height: 31px!important;
+}
+
+.nb-column {
+  min-width: 8rem;
+}
 </style>

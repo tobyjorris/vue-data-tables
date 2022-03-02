@@ -22,7 +22,7 @@
 import DataTable from 'primevue/datatable/'
 import Column from 'primevue/column/'
 import axios from 'axios'
-import axiosMock from "@/utils/axiosMock"
+import {axiosMock} from "@/utils/axiosMock";
 import { mockSubmissions } from '@/utils/data/submissions'
 
 export default {

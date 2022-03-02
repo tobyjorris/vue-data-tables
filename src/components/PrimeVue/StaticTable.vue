@@ -90,7 +90,7 @@ import DataTable from 'primevue/datatable/'
 import InputText from 'primevue/inputtext'
 import Column from 'primevue/column/'
 import axios from 'axios'
-import axiosMock from "@/utils/axiosMock"
+import {axiosMock} from "@/utils/axiosMock";
 import { mockSubmissions } from '@/utils/data/submissions'
 
 export default {
