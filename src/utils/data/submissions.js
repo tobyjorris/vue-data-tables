@@ -1,4 +1,4 @@
-export const submissions = {
+export const mockSubmissions = {
   "submissions": [
     {
       "id": 1,
@@ -6,7 +6,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -20,7 +20,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -33,7 +33,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}
@@ -48,7 +48,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -62,7 +62,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -75,7 +75,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}
@@ -90,7 +90,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -104,7 +104,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -117,7 +117,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}
@@ -132,7 +132,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -146,7 +146,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -159,7 +159,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}
@@ -174,7 +174,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -188,7 +188,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -201,7 +201,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}
@@ -216,7 +216,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -230,7 +230,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -243,7 +243,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}
@@ -258,7 +258,7 @@ export const submissions = {
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
       "submission_title": "Submission One",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"}
       ],
@@ -272,7 +272,7 @@ export const submissions = {
       "notified_body": "dekra",
       "status": "BSC Planned Submission Date Set",
       "submission_title": "Submission Two",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"}
       ],
       "submission_type": "MDF4900 Annual MDR Sampling Plan Review",
@@ -285,7 +285,7 @@ export const submissions = {
       "notified_body": "tuv-sud",
       "status": "Completed",
       "submission_title": "Submission Three",
-      "Product(s)": [
+      "products": [
         {"id": 1, "product_name": "Product 1"},
         {"id": 2, "product_name": "Product 2"},
         {"id": 3, "product_name": "Product 3"}

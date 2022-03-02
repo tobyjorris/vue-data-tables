@@ -14,11 +14,7 @@
     <template #header>
       <h2>Dynamically Generated Columns</h2>
     </template>
-    <Column v-for="column in columns" :key="column.field" :field="column.field" :header="column.header" >
-      <template #body="{data}">
-        <a href="#">{{data.noc_number}}</a>
-      </template>
-    </Column>
+    <Column v-for="column in columns" :key="column.field" :field="column.field" :header="column.header" ></Column>
   </data-table>
 </template>
 
@@ -47,7 +43,7 @@ export default {
   },
   mounted() {
     this.columns = [
-      {field: 'noc_number', header: 'NoC #'},
+      {field: 'noc_number', header: 'NoC #', styles: {'min-width': '5rem'}},
       {field: 'notified_body', header: 'NB'},
       {field: 'status', header: 'Status'},
       {field: 'submission_title', header: 'Submission Title'},

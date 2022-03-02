@@ -1,26 +1,48 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div class="container">
+    <div class="row mt-3">
+      <div class="col d-flex justify-content-center">
+          <img alt="Vue logo" class="mr-4" style="height: 96px; width: auto" src="./assets/logo.png">
+      </div>
+    </div>
+    <div class="row">
+      <b-tabs content-class="mt-3" fill>
+        <b-tab title="PrimeVue" active>
+          <div class="container">
+            <div class="row mt-5 mb-5">
+              <p-v-static-table />
+            </div>
+            <div class="row">
+              <p-v-dynamic-table />
+            </div>
+          </div>
+        </b-tab>
+        <b-tab title="Bootstrap Vue">
+          <div class="container">
+            <div class="row mt-5">
+              <b-v-dynamic-table :first-row-menu="true" />
+            </div>
+          </div>
+        </b-tab>
+      </b-tabs>
+    </div>
+
+  </div>
+
+
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
 
+import PVStaticTable from "@/components/PrimeVue/StaticTable";
+import PVDynamicTable from "@/components/PrimeVue/DynamicTable";
+import BVDynamicTable from "@/components/BootstrapVue/DynamicTable"
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    PVStaticTable,
+    PVDynamicTable,
+    BVDynamicTable
   }
 }
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
