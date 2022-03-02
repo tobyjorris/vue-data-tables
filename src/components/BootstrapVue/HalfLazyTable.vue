@@ -1,79 +1,61 @@
 <template>
-  <div class="container">
+ <div class="container mt-5">
     <div class="row">
       <div class="col">
        <b-table
-        id="bv-dynamic-table"
+        id="bv-half-lazy-table"
         :items="submissions"
         :current-page="currentPage"
-        :per-page="10"
+        :per-page="5"
         :fields="fields"
         sort-icon-left
         hover
         small
     >
-    <template v-if="firstRowMenu" #top-row>
-      <td v-for="field in fields" :key="field.key">
-        <template v-if="field.key === 'notified_body'">
-          <v-select v-model="filters[field.key]" :options="nbOptions"/>
-        </template>
-        <template v-else>
-          <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"></b-input>
-        </template>
-    </td>
-    </template>
-    <template #cell(noc_number)="data">
-      <a href="#">{{data.item.noc_number}}</a>
-    </template>
-    <template #cell(products)="data">
-      <div class="table-row">{{returnProductsString(data.item.products)}}</div>
-    </template>
-  </b-table>
+          <template v-if="firstRowMenu" #top-row>
+            <td v-for="field in fields" :key="field.key">
+              <template v-if="field.key === 'notified_body'">
+                <v-select v-model="filters[field.key]" :options="nbOptions"/>
+              </template>
+              <template v-else>
+                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"></b-input>
+              </template>
+            </td>
+          </template>
+          <template #cell(noc_number)="data">
+            <a href="#">{{data.item.noc_number}}</a>
+          </template>
+          <template #cell(products)="data">
+            <div class="table-row">{{returnProductsString(data.item.products)}}</div>
+          </template>
+        </b-table>
       </div>
     </div>
     <div class="row">
       <div class="col-3">
         <b-pagination
           v-model="currentPage"
-          :total-rows="21"
-          :per-page="10"
+          :total-rows="totalRows"
+          :per-page="5"
           align="fill"
           size="sm"
           class="my-0"
         ></b-pagination>
       </div>
     </div>
-    <div class="row mt-4 mb-5">
-      <div class="col">
-        <b-button class="mb-2" v-b-toggle.api variant="primary">API Requirements</b-button>
-        <b-button class="ml-3 mb-2" v-b-toggle.params variant="info">Filters</b-button>
-        <b-button class="ml-3 mb-2" variant="dark" @click="apiCall()">Print API Call</b-button>
-        <b-collapse id="api">
-          <b-card title="API Requirements">
-            <div>"total-rows": a count of the total number of records available. Used to determine paginator in event of server side pagination</div>
-            <div></div>
-          </b-card>
-        </b-collapse>
-        <b-collapse id="params">
-          <b-card title="Filters">
-            <div>{{ computedFilters }}</div>
-          </b-card>
-        </b-collapse>
-      </div>
-    </div>
   </div>
-
 </template>
 
 <script>
+import vSelect from "vue-select";
 import axiosMock from "@/utils/axiosMock";
+import axiosMockDelay from '@/utils/axiosMockDelay'
 import {mockSubmissions} from "@/utils/data/submissions";
+import {mockSubmissionsTwo} from "@/utils/data/submissionsTwo";
 import axios from "axios";
-import vSelect from 'vue-select'
-import 'vue-select/dist/vue-select.css';
 
 export default {
-  name: "DynamicTable",
+  name: "HalfLazyTable",
   components: {
     vSelect
   },
@@ -113,40 +95,38 @@ export default {
         submission_type: '',
         division: '',
         author: ''
-      }
+      },
+      totalRows: undefined,
+      awaitingFullData: null,
     }
   },
   mounted() {
-    this.getSubmissions()
+    this.awaitingFullData = true
+    try {
+      this.getFirstSubmissions()
+      this.getSecondSubmissions()
+    }
+    catch (error) {
+      console.log(error)
+    }
+
+    this.awaitingFullData = false
   },
   methods: {
-    async getSubmissions() {
+    async getFirstSubmissions() {
       axiosMock.onGet("/submissions").reply(200, mockSubmissions)
 
       await axios.get('/submissions').then(response => {
+        this.totalRows = response.data.totalRecords
         this.submissions = response.data.submissions
       })
     },
-    async lazyProvider(context, callback) {
-      /*
-      Context is an object associated with the table state, and contains the following properties:
+    async getSecondSubmissions() {
+      axiosMockDelay.onGet("/submissions-two").reply(200, mockSubmissionsTwo)
 
-      currentPage: The current page number (starting from 1, the value of the current-page prop)
-      perPage: The maximum number of rows per page to display (the value of the per-page prop)
-      filter: The value of the filter prop
-      sortBy: The current column key being sorted, or an empty string if not sorting
-      sortDesc: The current sort direction (true for descending, false for ascending)
-      apiUrl: The value provided to the api-url prop. null if none provided.
-       */
-      console.log('context', context)
-
-      try {
-        //const response = await axios.get(`/api/submission?page=${context.currentPage}&size=${context.perPage}`)
-        //return response.items
-      }
-      catch (error) {
-        return []
-      }
+      await axios.get('/submissions-two').then(response => {
+        this.submissions = this.submissions.concat(response.data.submissions)
+      })
     },
     returnProductsString(productsArray) {
       //Handles displaying a nested array of data in a column as a comma seperated string
@@ -174,16 +154,6 @@ export default {
 }
 </script>
 
-<style >
-#bv-dynamic-table {
-  font-size: .8rem;
-}
+<style scoped>
 
-.vs__dropdown-toggle {
-  height: 31px!important;
-}
-
-.nb-column {
-  min-width: 8rem;
-}
 </style>

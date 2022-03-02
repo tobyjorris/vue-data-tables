@@ -294,5 +294,6 @@ export const mockSubmissions = {
       "division": "PI",
       "author": "System Admin"
     }
-  ]
+  ],
+  "totalRecords": 32
 }

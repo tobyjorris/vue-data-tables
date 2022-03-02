@@ -22,27 +22,29 @@
             <div class="row mt-5">
               <b-v-dynamic-table :first-row-menu="true" />
             </div>
+            <div class="row">
+              <half-lazy-table :first-row-menu="true"  />
+            </div>
           </div>
         </b-tab>
       </b-tabs>
     </div>
-
   </div>
-
-
 </template>
 
 <script>
 
 import PVStaticTable from "@/components/PrimeVue/StaticTable";
 import PVDynamicTable from "@/components/PrimeVue/DynamicTable";
-import BVDynamicTable from "@/components/BootstrapVue/DynamicTable"
+import BVDynamicTable from "@/components/BootstrapVue/DynamicTable";
+import HalfLazyTable from "@/components/BootstrapVue/HalfLazyTable"
 export default {
   name: 'App',
   components: {
     PVStaticTable,
     PVDynamicTable,
-    BVDynamicTable
+    BVDynamicTable,
+    HalfLazyTable
   }
 }
 </script>
