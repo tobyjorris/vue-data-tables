@@ -1,12 +1,32 @@
 <template>
  <div class="container mt-5 mb-5">
+   <div class="row">
+     <div class="col">
+       <div class="d-flex ">
+         <div class="mr-4 d-flex">
+            <div class="mr-2">First API Call:</div>
+            <div v-if="firstCallRunning" class="spinner-border spinner-border-sm"  role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+            <div v-else style="color: green">Done</div>
+       </div>
+       <div class="d-flex">
+          <div class="mr-2">Second API Call:</div>
+          <div v-if="secondCallRunning" class="spinner-border spinner-border-sm" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+          <div v-else style="color: green">Done</div>
+       </div>
+       </div>
+     </div>
+   </div>
     <div class="row">
       <div class="col">
        <b-table
         id="bv-half-lazy-table"
         :items="submissions"
         :current-page="currentPage"
-        :per-page="5"
+        :per-page="7"
         :fields="fields"
         sort-icon-left
         hover
@@ -36,7 +56,7 @@
         <b-pagination
           v-model="currentPage"
           :total-rows="totalRows"
-          :per-page="5"
+          :per-page="7"
           :disabled="awaitingFullData"
           align="fill"
           size="sm"
@@ -44,7 +64,7 @@
         ></b-pagination>
       </div>
     </div>
-   <div class="row">
+   <div class="row mt-3">
      <div class="col">
        <b-button class="btn-success" @click="retrieveDataHalfLazy">Reset Table</b-button>
        <div>Actual Count of Submissions in Table: {{submissions.length}}</div>
@@ -93,6 +113,9 @@ export default {
     return {
       currentPage: 1,
       submissions: null,
+      firstCallRunning: null,
+      secondCallRunning: null,
+      awaitingFullData: null,
       fields: [
         {key: 'noc_number', label: 'NoC #', sortable: true},
         {key: 'notified_body', label: 'NB', class: 'nb-column', sortable: true},
@@ -115,7 +138,6 @@ export default {
         author: ''
       },
       totalRows: undefined,
-      awaitingFullData: null,
     }
   },
   mounted() {
@@ -123,22 +145,25 @@ export default {
   },
   methods: {
     async retrieveDataHalfLazy() {
-      this.submissions = []
-      this.awaitingFullData = true
+     this.initializeTable()
       await this.getFirstSubmissions()
       await this.getSecondSubmissions()
       this.awaitingFullData = false
     },
+    initializeTable() {
+      this.currentPage = 1
+      this.firstCallRunning = true
+      this.secondCallRunning = true
+      this.submissions = []
+      this.awaitingFullData = true
+    },
     getFirstSubmissions() {
-      console.log('started first call')
-
       axiosMock.onGet(`/submissions?records=${this.perPage}`).reply(200, mockSubmissions)
-
       const request = axios.get('/submissions')
 
       request
         .then(response => {
-          console.log('first call finished')
+          this.firstCallRunning = false
           this.totalRows = response.data.totalRecords
           this.submissions = response.data.submissions
         })
@@ -147,14 +172,13 @@ export default {
       return request
     },
     getSecondSubmissions() {
-      console.log('started second call')
       axiosMock.onGet("/submissions-two").reply(200, mockSubmissionsTwo)
 
       const request = axios.get('/submissions-two')
 
       request
         .then(response => {
-          console.log('second call finished')
+          this.secondCallRunning = false
           this.submissions = this.submissions.concat(response.data.submissions)
         })
         .catch(error => console.log('error', error))
@@ -188,7 +212,7 @@ export default {
 </script>
 
 <style scoped>
-#bv-dynamic-table {
+#bv-half-lazy-table {
   font-size: .8rem;
 }
 
