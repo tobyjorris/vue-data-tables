@@ -23,7 +23,7 @@
               <b-v-dynamic-table :first-row-menu="true" />
             </div>
             <div class="row">
-              <half-lazy-table :first-row-menu="true"  />
+              <half-lazy-table :first-row-menu="false"  />
             </div>
           </div>
         </b-tab>

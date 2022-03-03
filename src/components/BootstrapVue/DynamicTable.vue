@@ -2,46 +2,67 @@
   <div class="container">
     <div class="row">
       <div class="col">
-       <b-table
-        id="bv-dynamic-table"
-        :items="submissions"
-        :current-page="currentPage"
-        :per-page="10"
-        :fields="fields"
-        sort-icon-left
-        hover
-        small
-    >
-    <template v-if="firstRowMenu" #top-row>
-      <td v-for="field in fields" :key="field.key">
-        <template v-if="field.key === 'notified_body'">
-          <v-select v-model="filters[field.key]" :options="nbOptions"/>
-        </template>
-        <template v-else>
-          <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"></b-input>
-        </template>
-    </td>
-    </template>
-    <template #cell(noc_number)="data">
-      <a href="#">{{data.item.noc_number}}</a>
-    </template>
-    <template #cell(products)="data">
-      <div class="table-row">{{returnProductsString(data.item.products)}}</div>
-    </template>
-  </b-table>
+        <b-table
+         id="bv-dynamic-table"
+         :busy="loading"
+         :items="submissions"
+         :current-page="currentPage"
+         :per-page="perPage"
+         :fields="fields"
+         :filter="filters"
+         :filter-function="filterProvider"
+         @filtered="onFilter"
+         sort-icon-left
+         hover
+         small
+        >
+          <template v-if="firstRowMenu" #top-row>
+            <td v-for="field in fields" :key="field.key">
+              <template v-if="field.key === 'notified_body'">
+                <v-select v-model="filters[field.key]" :options="nbOptions"/>
+              </template>
+              <template v-else>
+                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"></b-input>
+              </template>
+            </td>
+          </template>
+          <template #table-busy>
+            <div id="table-busy-wrapper">
+              <div id="table-busy-spinner" class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+            </div>
+          </template>
+          <template #cell(noc_number)="data">
+            <a href="#">{{data.item.noc_number}}</a>
+          </template>
+          <template #cell(submission_title)="data">
+            <b-form-input size="sm" v-if="submissions[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="submissions[data.index].submission_title"></b-form-input>
+            <span v-else @click="editCellHandler(data, 'submission_title')">{{data.value}}</span>
+          </template>
+          <template #cell(products)="data">
+            <div class="table-row">{{returnProductsString(data.item.products)}}</div>
+          </template>
+        </b-table>
       </div>
     </div>
     <div class="row">
-      <div class="col-3">
-        <b-pagination
+      <div class="col-2"></div>
+      <div class="col-8">
+        <div class="d-flex">
+          <b-pagination
           v-model="currentPage"
-          :total-rows="21"
-          :per-page="10"
+          :total-rows="totalRows"
+          :per-page="perPage"
           align="fill"
           size="sm"
           class="my-0"
-        ></b-pagination>
+          >
+          </b-pagination>
+          <div class="d-flex align-items-center">Showing {{recordsRange}} of {{totalRows}} records</div>
+        </div>
       </div>
+      <div class="col-2"></div>
     </div>
     <div class="row mt-4 mb-5">
       <div class="col">
@@ -56,13 +77,12 @@
         </b-collapse>
         <b-collapse id="params">
           <b-card title="Filters">
-            <div>{{ computedFilters }}</div>
+            <div>{{ filterObject }}</div>
           </b-card>
         </b-collapse>
       </div>
     </div>
   </div>
-
 </template>
 
 <script>
@@ -81,21 +101,30 @@ export default {
     firstRowMenu: Boolean
   },
   computed: {
-    computedFilters() {
+    filterObject() {
       const filteredObject = {}
       const filteredKeys = Object.keys(this.filters).filter(key => this.filters[key])
       filteredKeys.forEach(key => filteredObject[key] = this.filters[key])
 
       return filteredObject
+    },
+    recordsRange() {
+      const totalPages = Math.ceil(this.totalRows / this.perPage)
+      const resultStart = (this.currentPage -1) * this.perPage + 1
+      const resultEnd = this.currentPage === totalPages ? this.totalRows : resultStart + this.perPage - 1
+      return `${resultStart} through ${resultEnd}`
     }
   },
   data() {
     return {
+      loading: true,
       currentPage: 1,
+      totalRows: 0,
+      perPage: 10,
       submissions: null,
       fields: [
         {key: 'noc_number', label: 'NoC #', sortable: true},
-        {key: 'notified_body', label: 'NB', class: 'nb-column', sortable: true},
+        {key: 'notified_body', label: 'NB', sortable: true},
         {key: 'status', label: 'Status', sortable: true},
         {key: 'submission_title', label: 'Submission Title', sortable: true},
         {key: 'products', label: 'Product(s)', sortable: true},
@@ -105,27 +134,38 @@ export default {
       ],
       nbOptions: ['BSI', 'Dekra', 'TUV-SUD'],
       filters: {
-        noc_number: '',
-        notified_body: '',
-        status: '',
-        submission_title: '',
-        products: '',
-        submission_type: '',
-        division: '',
-        author: ''
-      }
+        noc_number: null,
+        notified_body: null,
+        status: null,
+        submission_title: null,
+        products: null,
+        submission_type: null,
+        division: null,
+        author: null
+      },
+      selectedCell: null,
+
     }
   },
-  mounted() {
-    this.getSubmissions()
+  async mounted() {
+    try {
+      await this.getSubmissions()
+    }
+    catch (error) {
+      console.log('error', error)
+    }
+    finally {
+      this.loading = false
+    }
   },
   methods: {
     async getSubmissions() {
       axiosMock.onGet("/submissions").reply(200, mockSubmissions)
 
-      await axios.get('/submissions').then(response => {
-        this.submissions = response.data.submissions
-      })
+      const request = await axios.get('/submissions')
+      this.submissions = request.data.submissions
+      this.totalRows = request.data.submissions.length
+      return request
     },
     async lazyProvider(context, callback) {
       /*
@@ -169,6 +209,38 @@ export default {
       // axios.get(`/api/submissions?${this.returnFilterString()}`
       // Could django handle this as an object payload instead? Unconventional?
       console.log(this.returnFilterString())
+    },
+    editCellHandler(data, name) {
+        this.submissions = this.submissions.map(item => ({...item, isEdit: false}));
+        this.submissions[data.index].isEdit = true;
+        this.selectedCell = name
+    },
+    onFilter(filteredItems) {
+      console.log(filteredItems)
+      this.totalRows = filteredItems.length
+      this.currentPage = 1
+    },
+    filterProvider: function(tableRow, filterObject) {
+      // by looping through the filterObject instead of the tableRow we can avoid filtering off of columns want to exclude from the filter
+      for (let keyName in filterObject) {
+        const rowData = this.returnString(tableRow[keyName])
+        if (filterObject[keyName] !== null && !rowData.includes(filterObject[keyName].toLowerCase())) {
+          return null
+        }
+      }
+      return tableRow
+    },
+    returnString(data) {
+      let stringData
+        if (data.isArray) {
+          stringData = data.toString().toLowerCase()
+        } else if (typeof data === 'object') {
+          stringData = JSON.stringify(data).toLowerCase()
+        } else {
+          stringData = data.toLowerCase()
+        }
+
+      return stringData
     }
   }
 }
@@ -183,7 +255,23 @@ export default {
   height: 31px!important;
 }
 
-.nb-column {
-  min-width: 8rem;
+button.page-link, span.page-link, button.page-item:disabled{
+  border-radius: 3px;
+  padding: .2rem .8rem!important;
+  font-size: 1rem!important;
+  margin: 0 5px;
+  border:none !important;
+}
+
+#table-busy-spinner {
+  height: 150px;
+  width: 150px;
+}
+
+#table-busy-wrapper {
+  display: flex;
+  height: 200px;
+  justify-content: center;
+  align-items: center;
 }
 </style>

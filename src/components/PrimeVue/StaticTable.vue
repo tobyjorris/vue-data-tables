@@ -144,7 +144,7 @@ export default {
     async getSubmissions() {
       axiosMock.onGet("/submissions").reply(200, mockSubmissions)
 
-      await axios.get('/submissions').then(response => {
+      const response = await axios.get('/submissions').then(response => {
         this.submissions = response.data.submissions
         this.loading = false
       })

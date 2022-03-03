@@ -66,8 +66,16 @@
     </div>
    <div class="row mt-3">
      <div class="col">
-       <b-button class="btn-success" @click="retrieveDataHalfLazy">Reset Table</b-button>
        <div>Actual Count of Submissions in Table: {{submissions.length}}</div>
+       <b-button class="mb-2 mr-3" v-b-toggle.api-lazy variant="primary">API Requirements</b-button>
+       <b-button class="btn-success mb-2 mr-3" @click="retrieveDataHalfLazy">Reset Table</b-button>
+       <b-collapse id="api-lazy">
+          <b-card title="API Requirements">
+            <h6>First Call:</h6>
+            <div>"per-page": accepts an query param of how many records needed to be returned by the first call to ensure the first page of the table is filled.</div>
+            <div>"total-rows": a count of the total number of records available. Used to determine paginator in event of server side pagination</div>
+          </b-card>
+        </b-collapse>
      </div>
    </div>
   </div>
@@ -92,13 +100,10 @@ export default {
     },
     perPage: {
       type: Number,
-      required: true
     },
     apiURL: {
       type: String,
-      required: true
     }
-
   },
   computed: {
     computedFilters() {
@@ -107,15 +112,15 @@ export default {
       filteredKeys.forEach(key => filteredObject[key] = this.filters[key])
 
       return filteredObject
-    }
+    },
   },
   data() {
     return {
       currentPage: 1,
-      submissions: null,
+      submissions: [],
       firstCallRunning: null,
       secondCallRunning: null,
-      awaitingFullData: null,
+      awaitingFullData: true,
       fields: [
         {key: 'noc_number', label: 'NoC #', sortable: true},
         {key: 'notified_body', label: 'NB', class: 'nb-column', sortable: true},
@@ -146,8 +151,13 @@ export default {
   methods: {
     async retrieveDataHalfLazy() {
      this.initializeTable()
-      await this.getFirstSubmissions()
-      await this.getSecondSubmissions()
+      try {
+        await this.getFirstSubmissions().catch(e=> console.log(e))
+        await this.getSecondSubmissions().catch(e=> console.log('error in second submission', e))
+      }
+      catch(e) {
+
+      }
       this.awaitingFullData = false
     },
     initializeTable() {
@@ -157,18 +167,13 @@ export default {
       this.submissions = []
       this.awaitingFullData = true
     },
-    getFirstSubmissions() {
+    async getFirstSubmissions() {
       axiosMock.onGet(`/submissions?records=${this.perPage}`).reply(200, mockSubmissions)
-      const request = axios.get('/submissions')
+      const request = await axios.get('/submissions')
 
-      request
-        .then(response => {
-          this.firstCallRunning = false
-          this.totalRows = response.data.totalRecords
-          this.submissions = response.data.submissions
-        })
-        .catch(error => console.log('error', error))
-
+      this.firstCallRunning = false
+      this.totalRows = request.data.totalRecords
+      this.submissions = request.data.submissions
       return request
     },
     getSecondSubmissions() {

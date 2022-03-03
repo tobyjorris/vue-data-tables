@@ -14,7 +14,9 @@
     <template #header>
       <h2>Dynamically Generated Columns</h2>
     </template>
-    <Column v-for="column in columns" :key="column.field" :field="column.field" :header="column.header" ></Column>
+    <Column v-for="column in columns" :key="column.field" :field="column.field" :header="column.header">
+
+    </Column>
   </data-table>
 </template>
 

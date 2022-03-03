@@ -1,0 +1,13 @@
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+$custom-primary: theme-color-level('dark', -3);
+
+$pagination-color: black;
+$pagination-active-color: $light;
+$pagination-active-bg: $custom-primary;
+$pagination-hover-bg: lightgray;
+$pagination-hover-color: white;
+// Bootstrap and its default variables
+@import 'node_modules/bootstrap/scss/bootstrap';
+// BootstrapVue and its default variables
+@import 'node_modules/bootstrap-vue/src/index.scss';

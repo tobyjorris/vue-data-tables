@@ -1,8 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import 'bootstrap/dist/js/bootstrap.min'
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
+import './scss/custom-bootstrap.scss'
 import 'jquery/src/jquery.js'
 
 import 'primevue/resources/themes/saga-blue/theme.css';
