@@ -18,7 +18,7 @@
          hover
          small
         >
-          <template v-if="firstRowMenu" #top-row>
+          <template v-if="filterable" #top-row>
             <td v-for="field in fields" :key="field.key">
               <template v-if="field.key === 'notified_body'">
                 <b-form-select v-model="filters[field.key]" size="sm" :options="nbOptions" :disabled="loading.lazy"/>
@@ -35,26 +35,19 @@
               </div>
             </div>
           </template>
-          <template
-            v-for="(_, name) in $scopedSlots"
-            :slot="name"
-            slot-scope="slotData"
-          >
+          <template v-for="(_, name) in $scopedSlots" :slot="name" slot-scope="slotData">
             <slot :name="name" v-bind="slotData"/>
           </template>
           <template #cell(submission_title)="data">
             <b-form-input size="sm" v-if="tableData[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="tableData[data.index].submission_title"></b-form-input>
             <span v-else @click="editCellHandler(data, 'submission_title')">{{data.value}}</span>
           </template>
-          <template #cell(products)="data">
-            <div class="table-row">{{returnStringFromArray(data.item.products, 'product_name')}}</div>
-          </template>
         </b-table>
       </div>
     </div>
     <div class="row">
       <div class="col align-self-center">
-        <div v-if="!loading.lazy" class="d-flex justify-content-around">
+        <div  class="d-flex justify-content-around">
           <b-pagination
           v-model="currentPage"
           :total-rows="totalRows"
@@ -62,9 +55,10 @@
           align="fill"
           size="sm"
           class="my-0"
+          :disabled="loading.lazy"
           >
           </b-pagination>
-          <div class="d-flex align-items-center">Showing {{recordsRange}} of {{totalRows}} records</div>
+          <div v-if="!loading.lazy" class="d-flex align-items-center">Showing {{recordsRange}} of {{totalRows}} records</div>
         </div>
       </div>
     </div>
@@ -74,13 +68,16 @@
         <b-button class="ml-3 mb-2" variant="dark" @click="resetTable()">Reset Table</b-button>
         <b-collapse id="api">
           <b-card title="API Requirements">
-            <h6>Query Params</h6>
+            <h6 class="mt-3 mb-1">Query Params</h6>
             <div>"?count=": handle a query parameter that returns a specified amount of records starting from index 0</div>
             <div>"second-api-call": how are we going to handle the second api call returning the 'rest' of the records?</div>
-            <h6>Response Formats</h6>
+            <h6 class="mt-3 mb-1">Response Formats</h6>
             <div>"response.data[<strong>tableData</strong>]": a consistent, generic name for the key in the response object that holds all of the records to go into the table</div>
             <div>"response.data.tableData.totalRows": a count of the total number of records available, only needed on ?count= calls Used to determine paginator in event of lazy loading behavior</div>
-            <div></div>
+            <h6 class="mt-3 mb-1">Optional/Questions</h6>
+            <div>"filters" : bad idea to turn the table data values into objects to determine 'filterability' (tableData[0].noc_number.filterable). Makes things very complicated for the front end</div>
+            <div class="ml-5">- If we don't want the front end dev to specify filters through a prop, back end could send "response.data.filters" I guess...</div>
+            <div class="ml-5">- Same goes for Table Headers</div>
           </b-card>
         </b-collapse>
       </div>
@@ -89,15 +86,15 @@
 </template>
 
 <script>
+import axios from "axios";
 import {axiosMock} from "@/utils/axiosMock";
 import {mockSubmissions} from "@/utils/data/submissions";
-import axios from "axios";
 import {mockSubmissionsTwo} from "@/utils/data/submissionsTwo";
 
 export default {
   name: "DynamicTable",
   props: {
-    firstRowMenu: {
+    filterable: {
       type: Boolean,
       default: false
     },
@@ -113,15 +110,12 @@ export default {
       type: String,
       required: false
     },
+    perPage: {
+      type: Number,
+      default: 10
+    },
   },
   computed: {
-    filterObject() {
-      const filteredObject = {}
-      const filteredKeys = Object.keys(this.filters).filter(key => this.filters[key])
-      filteredKeys.forEach(key => filteredObject[key] = this.filters[key])
-
-      return filteredObject
-    },
     recordsRange() {
       const totalPages = Math.ceil(this.totalRows / this.perPage)
       const resultStart = (this.currentPage -1) * this.perPage + 1
@@ -135,10 +129,8 @@ export default {
         base: true,
         lazy: this.lazy
       },
-      loadingSecondData: false,
       currentPage: 1,
       totalRows: 0,
-      perPage: 10,
       tableData: null,
       fields: [
         {key: 'noc_number', label: 'NoC #', sortable: true},
@@ -169,15 +161,19 @@ export default {
     this.getTableData()
   },
   methods: {
+    debug(data) {
+      console.log(data)
+    },
     async getTableData() {
       try {
         await this.firstDataBatch()
+        this.setFields()
         if (this.lazy) await this.secondDataBatch()
       }
       catch (error) {
         this.loading.base = false
         this.loading.lazy = false
-        console.log('error getting table data', error)
+        console.log('Table Error', error)
       }
     },
     async firstDataBatch() {
@@ -199,7 +195,15 @@ export default {
       return request
     },
     setFields() {
-
+      for (let fieldName in this.tableData[0]) {
+        if (fieldName.filterable) {
+          this.fields.push({
+            key: fieldName.name,
+            label: fieldName.label,
+            sortable: true,
+          })
+        }
+      }
     },
     resetTable() {
       this.tableData = []
@@ -207,20 +211,6 @@ export default {
       this.totalRows = 0
       this.currentPage = 1
       this.getTableData()
-    },
-    returnStringFromArray(dataArray, keyToPrint) {
-      /*
-      Assumes an array with single nested objects in it, ie:
-      const array = [
-        {key: value, key2: value}
-        {key: value, key2: value}
-      ]
-       */
-      const stringArray = []
-      for (let data of dataArray) {
-        stringArray.push(data[keyToPrint])
-      }
-      return stringArray.join(', ')
     },
     editCellHandler(data, name) {
         this.tableData = this.tableData.map(item => ({...item, isEdit: false}));
