@@ -46,7 +46,7 @@
             <b-form-input size="sm" v-if="tableData[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="tableData[data.index].submission_title"></b-form-input>
             <span v-else @click="editCellHandler(data, 'submission_title')">{{data.value}}</span>
           </template>
-           <template #cell(products)="data">
+          <template #cell(products)="data">
             <div class="table-row">{{returnStringFromArray(data.item.products, 'product_name')}}</div>
           </template>
         </b-table>
@@ -115,11 +115,6 @@ export default {
     },
   },
   computed: {
-    propsError() {
-      if (this.lazy && !this.secondApiUrl) {
-        throw new Error('Usage of the "lazy" prop requires the usage of the secondApiUrl prop')
-      }
-    },
     filterObject() {
       const filteredObject = {}
       const filteredKeys = Object.keys(this.filters).filter(key => this.filters[key])
@@ -170,6 +165,7 @@ export default {
     }
   },
   mounted() {
+    this.checkPropsForError()
     this.getTableData()
   },
   methods: {
@@ -255,7 +251,12 @@ export default {
           stringData = data.toLowerCase()
         }
       return stringData
-    }
+    },
+    checkPropsForError() {
+      if (this.lazy && !this.secondApiUrl) {
+        throw new Error('Usage of the "lazy" prop requires the usage of the secondApiUrl prop')
+      }
+    },
   }
 }
 </script>
@@ -263,6 +264,7 @@ export default {
 <style >
 #bv-dynamic-table {
   font-size: .8rem;
+  min-width: 100%
 }
 
 button.page-link, span.page-link, button.page-item:disabled{

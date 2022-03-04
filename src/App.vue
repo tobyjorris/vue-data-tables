@@ -15,12 +15,9 @@
                   lazy
                   api-url="/submissions"
                   second-api-url="/submissions-two"
-                  font-size="0.8rem"
               >
-                <template #cell(noc_number)="data">
-                   <a :href="'/go-to/' + data.item.noc_number">{{data.item.noc_number}}</a>
-                </template>
-            </b-v-dynamic-table>
+              <!--TODO - configure dynamic prop slots for <template #cell(column-name)="data" /> -->
+              </b-v-dynamic-table>
             </div>
             <div class="row">
               <half-lazy-table :first-row-menu="false"  />
