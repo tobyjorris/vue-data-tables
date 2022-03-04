@@ -1,11 +1,11 @@
 <template>
-  <div class="container">
+  <div class="container-fluid">
     <div class="row">
       <div class="col">
         <b-table
          id="bv-dynamic-table"
-         :busy="loading"
-         :items="submissions"
+         :busy="loading.base"
+         :items="tableData"
          :current-page="currentPage"
          :per-page="perPage"
          :fields="fields"
@@ -13,16 +13,18 @@
          :filter-function="filterProvider"
          @filtered="onFilter"
          sort-icon-left
+         show-empty
+         empty-filtered-text="No records to show. Please check your filters and try again."
          hover
          small
         >
           <template v-if="firstRowMenu" #top-row>
             <td v-for="field in fields" :key="field.key">
               <template v-if="field.key === 'notified_body'">
-                <v-select v-model="filters[field.key]" :options="nbOptions"/>
+                <b-form-select v-model="filters[field.key]" size="sm" :options="nbOptions" :disabled="loading.lazy"/>
               </template>
               <template v-else>
-                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"></b-input>
+                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
               </template>
             </td>
           </template>
@@ -33,23 +35,26 @@
               </div>
             </div>
           </template>
-          <template #cell(noc_number)="data">
-            <a href="#">{{data.item.noc_number}}</a>
+          <template
+            v-for="(_, name) in $scopedSlots"
+            :slot="name"
+            slot-scope="slotData"
+          >
+            <slot :name="name" v-bind="slotData"/>
           </template>
           <template #cell(submission_title)="data">
-            <b-form-input size="sm" v-if="submissions[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="submissions[data.index].submission_title"></b-form-input>
+            <b-form-input size="sm" v-if="tableData[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="tableData[data.index].submission_title"></b-form-input>
             <span v-else @click="editCellHandler(data, 'submission_title')">{{data.value}}</span>
           </template>
-          <template #cell(products)="data">
-            <div class="table-row">{{returnProductsString(data.item.products)}}</div>
+           <template #cell(products)="data">
+            <div class="table-row">{{returnStringFromArray(data.item.products, 'product_name')}}</div>
           </template>
         </b-table>
       </div>
     </div>
     <div class="row">
-      <div class="col-2"></div>
-      <div class="col-8">
-        <div class="d-flex">
+      <div class="col align-self-center">
+        <div v-if="!loading.lazy" class="d-flex justify-content-around">
           <b-pagination
           v-model="currentPage"
           :total-rows="totalRows"
@@ -62,22 +67,20 @@
           <div class="d-flex align-items-center">Showing {{recordsRange}} of {{totalRows}} records</div>
         </div>
       </div>
-      <div class="col-2"></div>
     </div>
     <div class="row mt-4 mb-5">
       <div class="col">
         <b-button class="mb-2" v-b-toggle.api variant="primary">API Requirements</b-button>
-        <b-button class="ml-3 mb-2" v-b-toggle.params variant="info">Filters</b-button>
-        <b-button class="ml-3 mb-2" variant="dark" @click="apiCall()">Print API Call</b-button>
+        <b-button class="ml-3 mb-2" variant="dark" @click="resetTable()">Reset Table</b-button>
         <b-collapse id="api">
           <b-card title="API Requirements">
-            <div>"total-rows": a count of the total number of records available. Used to determine paginator in event of server side pagination</div>
+            <h6>Query Params</h6>
+            <div>"?count=": handle a query parameter that returns a specified amount of records starting from index 0</div>
+            <div>"second-api-call": how are we going to handle the second api call returning the 'rest' of the records?</div>
+            <h6>Response Formats</h6>
+            <div>"response.data[<strong>tableData</strong>]": a consistent, generic name for the key in the response object that holds all of the records to go into the table</div>
+            <div>"response.data.tableData.totalRows": a count of the total number of records available, only needed on ?count= calls Used to determine paginator in event of lazy loading behavior</div>
             <div></div>
-          </b-card>
-        </b-collapse>
-        <b-collapse id="params">
-          <b-card title="Filters">
-            <div>{{ filterObject }}</div>
           </b-card>
         </b-collapse>
       </div>
@@ -89,18 +92,34 @@
 import {axiosMock} from "@/utils/axiosMock";
 import {mockSubmissions} from "@/utils/data/submissions";
 import axios from "axios";
-import vSelect from 'vue-select'
-import 'vue-select/dist/vue-select.css';
+import {mockSubmissionsTwo} from "@/utils/data/submissionsTwo";
 
 export default {
   name: "DynamicTable",
-  components: {
-    vSelect
-  },
   props: {
-    firstRowMenu: Boolean
+    firstRowMenu: {
+      type: Boolean,
+      default: false
+    },
+    lazy: {
+      type: Boolean,
+      default: false
+    },
+    apiUrl: {
+      type: String,
+      required: true
+    },
+    secondApiUrl: {
+      type: String,
+      required: false
+    },
   },
   computed: {
+    propsError() {
+      if (this.lazy && !this.secondApiUrl) {
+        throw new Error('Usage of the "lazy" prop requires the usage of the secondApiUrl prop')
+      }
+    },
     filterObject() {
       const filteredObject = {}
       const filteredKeys = Object.keys(this.filters).filter(key => this.filters[key])
@@ -117,11 +136,15 @@ export default {
   },
   data() {
     return {
-      loading: true,
+      loading: {
+        base: true,
+        lazy: this.lazy
+      },
+      loadingSecondData: false,
       currentPage: 1,
       totalRows: 0,
       perPage: 10,
-      submissions: null,
+      tableData: null,
       fields: [
         {key: 'noc_number', label: 'NoC #', sortable: true},
         {key: 'notified_body', label: 'NB', sortable: true},
@@ -144,84 +167,76 @@ export default {
         author: null
       },
       selectedCell: null,
-
     }
   },
-  async mounted() {
-    try {
-      await this.getSubmissions()
-    }
-    catch (error) {
-      console.log('error', error)
-    }
-    finally {
-      this.loading = false
-    }
+  mounted() {
+    this.getTableData()
   },
   methods: {
-    async getSubmissions() {
-      axiosMock.onGet("/submissions").reply(200, mockSubmissions)
-
-      const request = await axios.get('/submissions')
-      this.submissions = request.data.submissions
-      this.totalRows = request.data.submissions.length
-      return request
-    },
-    async lazyProvider(context, callback) {
-      /*
-      Context is an object associated with the table state, and contains the following properties:
-
-      currentPage: The current page number (starting from 1, the value of the current-page prop)
-      perPage: The maximum number of rows per page to display (the value of the per-page prop)
-      filter: The value of the filter prop
-      sortBy: The current column key being sorted, or an empty string if not sorting
-      sortDesc: The current sort direction (true for descending, false for ascending)
-      apiUrl: The value provided to the api-url prop. null if none provided.
-       */
-      console.log('context', context)
-
+    async getTableData() {
       try {
-        //const response = await axios.get(`/api/submission?page=${context.currentPage}&size=${context.perPage}`)
-        //return response.items
+        await this.firstDataBatch()
+        if (this.lazy) await this.secondDataBatch()
       }
       catch (error) {
-        return []
+        this.loading.base = false
+        this.loading.lazy = false
+        console.log('error getting table data', error)
       }
     },
-    returnProductsString(productsArray) {
-      //Handles displaying a nested array of data in a column as a comma seperated string
-      const arrayOfProducts = []
-      for (let product of productsArray) {
-        arrayOfProducts.push(product.product_name)
-      }
+    async firstDataBatch() {
+      axiosMock.onGet(`${this.apiUrl}`).reply(200, mockSubmissions)
+      axiosMock.onGet(`${this.apiUrl}?count=${this.perPage}`).reply(200, mockSubmissions)
+      const apiEndpoint = this.lazy ? `${this.apiUrl}?count=${this.perPage}` : this.apiUrl
 
-      return arrayOfProducts.join(', ')
+      const request = await axios.get(apiEndpoint)
+      this.tableData = request.data.submissions
+      this.totalRows = this.lazy ? request.data.submissions.totalRecords : request.data.submissions.length
+      this.loading.base = false
+      return request
     },
-    returnFilterString() {
-      // Builds a filter string to be appended to an api call as query params.
-      let filterString = ''
-      for (let filterKey in this.computedFilters) {
-        filterString = filterString + `&${filterKey}=${this.computedFilters[filterKey]}`
+    async secondDataBatch() {
+      axiosMock.onGet(this.secondApiUrl).reply(200, mockSubmissionsTwo)
+      const request = await axios.get(this.secondApiUrl)
+      this.tableData = this.tableData.concat(request.data.submissions)
+      this.loading.lazy = false
+      return request
+    },
+    setFields() {
+
+    },
+    resetTable() {
+      this.tableData = []
+      this.loading = true
+      this.totalRows = 0
+      this.currentPage = 1
+      this.getTableData()
+    },
+    returnStringFromArray(dataArray, keyToPrint) {
+      /*
+      Assumes an array with single nested objects in it, ie:
+      const array = [
+        {key: value, key2: value}
+        {key: value, key2: value}
+      ]
+       */
+      const stringArray = []
+      for (let data of dataArray) {
+        stringArray.push(data[keyToPrint])
       }
-      return filterString
-    },
-    apiCall() {
-      // axios.get(`/api/submissions?${this.returnFilterString()}`
-      // Could django handle this as an object payload instead? Unconventional?
-      console.log(this.returnFilterString())
+      return stringArray.join(', ')
     },
     editCellHandler(data, name) {
-        this.submissions = this.submissions.map(item => ({...item, isEdit: false}));
-        this.submissions[data.index].isEdit = true;
+        this.tableData = this.tableData.map(item => ({...item, isEdit: false}));
+        this.tableData[data.index].isEdit = true;
         this.selectedCell = name
     },
     onFilter(filteredItems) {
-      console.log(filteredItems)
       this.totalRows = filteredItems.length
       this.currentPage = 1
     },
     filterProvider: function(tableRow, filterObject) {
-      // by looping through the filterObject instead of the tableRow we can avoid filtering off of columns want to exclude from the filter
+      // by looping through the filterObject instead of the tableRow we can avoid filtering off of columns want to exclude from the 'filter functionality'
       for (let keyName in filterObject) {
         const rowData = this.returnString(tableRow[keyName])
         if (filterObject[keyName] !== null && !rowData.includes(filterObject[keyName].toLowerCase())) {
@@ -239,7 +254,6 @@ export default {
         } else {
           stringData = data.toLowerCase()
         }
-
       return stringData
     }
   }
@@ -251,10 +265,6 @@ export default {
   font-size: .8rem;
 }
 
-.vs__dropdown-toggle {
-  height: 31px!important;
-}
-
 button.page-link, span.page-link, button.page-item:disabled{
   border-radius: 3px;
   padding: .2rem .8rem!important;
@@ -264,6 +274,7 @@ button.page-link, span.page-link, button.page-item:disabled{
 }
 
 #table-busy-spinner {
+  margin-top: 75px;
   height: 150px;
   width: 150px;
 }

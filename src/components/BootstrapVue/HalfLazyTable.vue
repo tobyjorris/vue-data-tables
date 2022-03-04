@@ -177,18 +177,7 @@ export default {
       return request
     },
     getSecondSubmissions() {
-      axiosMock.onGet("/submissions-two").reply(200, mockSubmissionsTwo)
 
-      const request = axios.get('/submissions-two')
-
-      request
-        .then(response => {
-          this.secondCallRunning = false
-          this.submissions = this.submissions.concat(response.data.submissions)
-        })
-        .catch(error => console.log('error', error))
-
-      return request
     },
     returnProductsString(productsArray) {
       //Handles displaying a nested array of data in a column as a comma seperated string

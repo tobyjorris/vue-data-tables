@@ -7,23 +7,33 @@
     </div>
     <div class="row">
       <b-tabs content-class="mt-3" fill>
-        <b-tab title="PrimeVue" active>
+        <b-tab title="Bootstrap Vue" active>
+          <div class="container">
+            <div class="row mt-5">
+              <b-v-dynamic-table
+                  first-row-menu
+                  lazy
+                  api-url="/submissions"
+                  second-api-url="/submissions-two"
+                  font-size="0.8rem"
+              >
+                <template #cell(noc_number)="data">
+                   <a :href="'/go-to/' + data.item.noc_number">{{data.item.noc_number}}</a>
+                </template>
+            </b-v-dynamic-table>
+            </div>
+            <div class="row">
+              <half-lazy-table :first-row-menu="false"  />
+            </div>
+          </div>
+        </b-tab>
+        <b-tab title="PrimeVue" >
           <div class="container">
             <div class="row mt-5 mb-5">
               <p-v-static-table />
             </div>
             <div class="row">
               <p-v-dynamic-table />
-            </div>
-          </div>
-        </b-tab>
-        <b-tab title="Bootstrap Vue">
-          <div class="container">
-            <div class="row mt-5">
-              <b-v-dynamic-table :first-row-menu="true" />
-            </div>
-            <div class="row">
-              <half-lazy-table :first-row-menu="false"  />
             </div>
           </div>
         </b-tab>
