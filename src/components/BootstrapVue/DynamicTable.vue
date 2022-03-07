@@ -1,5 +1,13 @@
 <template>
   <div class="container-fluid">
+    <div class="row justify-content-end mb-2">
+      <div class="col-3">
+        <div class="d-flex">
+          <label id="page-select-label" for="per-page-select" class="w-100 mb-0 mr-3 d-flex align-items-center">Per Page:</label>
+          <b-form-select id="per-page-select" v-model="perPage" :options="[10, 25, 50]"></b-form-select>
+        </div>
+      </div>
+    </div>
     <div class="row">
       <div class="col">
         <b-table
@@ -19,14 +27,12 @@
          small
         >
           <template v-if="filterable" #top-row>
-            <!--TODO loop over this.filters instead of this.tableFields-->
-            <td v-for="field in tableFields" :key="field.key">
-                  <!--TODO - do we want to have selects in the filters?-->
-<!--              <template v-if="field.key === 'notified_body'">-->
-<!--                <b-form-select v-model="filters[field.key]" size="sm" :options="nbOptions" :disabled="loading.lazy"/>-->
-<!--              </template>-->
-              <template>
-                <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
+            <td v-for="(filterValue, filterName) in filters" :key="filterName">
+              <template v-if="!!filters[filterName].options">
+                <b-form-select v-model="filters[filterName].value" size="sm" :options="filters[filterName].options" :disabled="loading.lazy"/>
+              </template>
+              <template v-else>
+                <b-input v-model="filters[filterName].value" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
               </template>
             </td>
           </template>
@@ -41,16 +47,17 @@
           <template v-for="(_, name) in $scopedSlots" :slot="name" slot-scope="slotData">
             <slot :name="name" v-bind="slotData"/>
           </template>
-          <template #cell(submission_title)="data">
-            <b-form-input size="sm" v-if="tableData[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="tableData[data.index].submission_title"></b-form-input>
-            <span v-else @click="editCellHandler(data, 'submission_title')">{{data.value}}</span>
-          </template>
+          <!--TODO the template for implementing inline cell editing starts here-->
+<!--          <template #cell(submission_title)="data">-->
+<!--            <b-form-input size="sm" v-if="tableData[data.index].isEdit && selectedCell === 'submission_title'" type="text" v-model="tableData[data.index].submission_title"></b-form-input>-->
+<!--            <span v-else @click="editCellHandler(data, 'submission_title')">{{data.value}}</span>-->
+<!--          </template>-->
         </b-table>
       </div>
     </div>
-    <div class="row">
+    <div v-if="perPage < totalRows" class="row">
       <div class="col align-self-center">
-        <div  class="d-flex justify-content-around">
+        <div class="d-flex justify-content-around">
           <b-pagination
           v-model="currentPage"
           :total-rows="totalRows"
@@ -68,16 +75,21 @@
     <div class="row mt-4 mb-5">
       <div class="col">
         <b-button class="mb-2" v-b-toggle.api variant="primary">API Requirements</b-button>
-        <b-button class="ml-3 mb-2" variant="dark" @click="resetTable()">Reset Table</b-button>
+        <b-button class="ml-3 mb-2" variant="dark" @click="resetTable()">Reload Table</b-button>
         <b-collapse id="api">
           <b-card title="API Requirements">
             <h6 class="mt-3 mb-1">Query Params</h6>
             <div>"?count=": handle a query parameter that returns a specified amount of records starting from index 0</div>
             <div>"second-api-call": how are we going to handle the second api call returning the 'rest' of the records?</div>
+            <div class="ml-5">- "/secondCall?count=this.perPage" - we'll need to send the same count used in the first call so we know which records not to send"</div>
             <h6 class="mt-3 mb-1">Response Formats</h6>
             <div>"response.data[<strong>tableData</strong>]": a consistent, generic name for the key in the response object that holds all of the records to go into the table</div>
-            <div>"response.data.tableData.totalRows": a count of the total number of records available, only needed on ?count= calls Used to determine paginator in event of lazy loading behavior</div>
+            <div>"response.data.totalRows": a count of the total number of records available, only needed on ?count= calls Used to determine paginator in event of lazy loading behavior</div>
+            <div class="ml-5">- Also would set us up for a callback type behavior where we get x number of records every call until tableData.length === response.data.totalRows</div>
             <h6 class="mt-3 mb-1">Optional/Questions</h6>
+            <div>Filter Selects : is there a strong argument for populating select dropdowns with preset options for filters? Absolutely can be done, but requires some more development</div>
+            <div class="ml-5">- Dynamically populating dropdowns based off of column content - difficult</div>
+            <div class="ml-5">- Another option would be to tie in with the process for filters below - include those options with a filters server response key</div>
             <div>"filters" : bad idea to turn the table data values into objects to determine 'filterability' (tableData[0].noc_number.filterable). Makes things very complicated for the front end</div>
             <div class="ml-5">- If we don't want the front end dev to specify filters through a prop, back end could send "response.data.filters" I guess...</div>
             <div class="ml-5">- Same goes for Table Headers, except we probably need to have the front end specify them so they can assign table column widths</div>
@@ -113,13 +125,13 @@ export default {
       type: String,
       required: false
     },
-    perPage: {
-      type: Number,
-      default: 10
-    },
     tableFields: {
       type: Array,
       required: true,
+    },
+    filters: {
+      type: Array,
+      required: false,
       default: () => []
     }
   },
@@ -133,20 +145,20 @@ export default {
   },
   data() {
     return {
+      currentPage: 1,
       loading: {
         base: true,
         lazy: this.lazy
       },
-      currentPage: 1,
+      perPage: 10,
+      selectedCell: null,
       totalRows: 0,
       tableData: [],
-      filters: {},
-      selectedCell: null,
     }
   },
   mounted() {
-    this.checkPropsForError()
-    this.setFilters()
+    this.checkPropsForErrors()
+    // this.setFilters()
     this.getTableData()
   },
   methods: {
@@ -204,10 +216,9 @@ export default {
       this.currentPage = 1
     },
     filterProvider: function(tableRow, filterObject) {
-      // by looping through the filterObject instead of the tableRow we can avoid filtering off of columns want to exclude from the 'filter functionality'
-      for (let keyName in filterObject) {
-        const rowData = this.returnString(tableRow[keyName])
-        if (filterObject[keyName] !== null && !rowData.includes(filterObject[keyName].toLowerCase())) {
+      for (let filter of filterObject) {
+        const rowData = this.returnString(tableRow[filter.key])
+        if (filter.value !== null && !rowData.includes(filter.value.toLowerCase())) {
           return null
         }
       }
@@ -224,33 +235,35 @@ export default {
         }
       return stringData
     },
-    checkPropsForError() {
+    checkPropsForErrors() {
+      const propErrors = []
+
       if (this.lazy && !this.secondApiUrl) {
-        throw new Error('Usage of the "lazy" prop requires the usage of the secondApiUrl prop')
+        propErrors.push(new Error('Usage of the "lazy" prop requires the usage of the secondApiUrl prop'))
       }
+
+      if (this.filterable && this.filters.length === 0) {
+       propErrors.push(new Error('Usage of the "filterable" prop requires an array of filter objects passed to the filters prop'))
+      }
+
+      if (propErrors.length > 0) throw propErrors
     },
   }
 }
 </script>
 
-<style >
-#bv-dynamic-table {
-  font-size: .8rem;
-  min-width: 100%
-}
-
+<style>
 button.page-link, span.page-link, button.page-item:disabled{
   border-radius: 3px;
   padding: .2rem .8rem!important;
   font-size: 1rem!important;
-  margin: 0 5px;
+  margin: 0 .3rem;
   border:none !important;
 }
 
 #table-busy-spinner {
-  margin-top: 75px;
-  height: 150px;
-  width: 150px;
+  height: 9rem;
+  width: 9rem;
 }
 
 #table-busy-wrapper {
@@ -258,5 +271,9 @@ button.page-link, span.page-link, button.page-item:disabled{
   height: 200px;
   justify-content: center;
   align-items: center;
+}
+
+#page-select-label {
+  font-size: 1rem;
 }
 </style>

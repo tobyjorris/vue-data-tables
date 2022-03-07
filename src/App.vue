@@ -6,43 +6,47 @@
       </div>
     </div>
     <div class="row">
-      <b-tabs content-class="mt-3" fill>
-        <b-tab title="Bootstrap Vue" active>
-          <div class="container">
-            <div class="row mt-5">
-              <simple-apps-table
-                  filterable
-                  lazy
-                  api-url="/submissions"
-                  second-api-url="/submissions-two"
-                  :per-page="10"
-                  :table-fields="tableFields"
-              >
-              <!--Any custom column cells can go here-->
-                <template #cell(noc_number)="data">
-                  <a href="#">{{data.item.noc_number}}</a>
-                </template>
-                <template #cell(products)="data">
-                  <div class="table-row">{{returnStringFromArray(data.item.products, 'product_name')}}</div>
-                </template>
-              </simple-apps-table>
-            </div>
-<!--            <div class="row">-->
-<!--              <half-lazy-table :first-row-menu="false"  />-->
-<!--            </div>-->
-          </div>
-        </b-tab>
-<!--        <b-tab title="PrimeVue" >-->
+      <div class="col">
+         <simple-apps-table
+           id="simple-apps-table"
+           filterable
+           lazy
+           api-url="/submissions"
+           second-api-url="/submissions-two"
+           :table-fields="tableFields"
+           :filters="filters"
+        >
+          <!--Any custom column cells can go here-->
+          <template #cell(noc_number)="data">
+            <a href="#">{{data.item.noc_number}}</a>
+          </template>
+          <template #cell(products)="data">
+            <div class="table-row">{{returnStringFromArray(data.item.products, 'product_name')}}</div>
+          </template>
+        </simple-apps-table>
+      </div>
+<!--      <b-tabs content-class="mt-3" fill>-->
+<!--        <b-tab title="Bootstrap Vue" active>-->
 <!--          <div class="container">-->
-<!--            <div class="row mt-5 mb-5">-->
-<!--              <p-v-static-table />-->
+<!--            <div class="row mt-5">-->
+<!--&lt;!&ndash;             &ndash;&gt;-->
 <!--            </div>-->
-<!--            <div class="row">-->
-<!--              <p-v-dynamic-table />-->
-<!--            </div>-->
+<!--&lt;!&ndash;            <div class="row">&ndash;&gt;-->
+<!--&lt;!&ndash;              <half-lazy-table :first-row-menu="false"  />&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
 <!--          </div>-->
 <!--        </b-tab>-->
-      </b-tabs>
+<!--&lt;!&ndash;        <b-tab title="PrimeVue" >&ndash;&gt;-->
+<!--&lt;!&ndash;          <div class="container">&ndash;&gt;-->
+<!--&lt;!&ndash;            <div class="row mt-5 mb-5">&ndash;&gt;-->
+<!--&lt;!&ndash;              <p-v-static-table />&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;            <div class="row">&ndash;&gt;-->
+<!--&lt;!&ndash;              <p-v-dynamic-table />&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;          </div>&ndash;&gt;-->
+<!--&lt;!&ndash;        </b-tab>&ndash;&gt;-->
+<!--      </b-tabs>-->
     </div>
   </div>
 </template>
@@ -64,15 +68,25 @@ export default {
   data() {
     return {
       tableFields: [
-        {key: 'noc_number', label: 'NoC #', sortable: true},
-        {key: 'notified_body', label: 'NB', sortable: true},
+        {key: 'noc_number', label: 'NoC #', sortable: true, class: 'noc-col align-middle',},
+        {key: 'notified_body', label: 'NB', sortable: true, class: 'nb-col'},
         {key: 'status', label: 'Status', sortable: true},
         {key: 'submission_title', label: 'Submission Title', sortable: true},
         {key: 'products', label: 'Product(s)', sortable: true},
         {key: 'submission_type', label: 'Submission Type', sortable: true},
-        {key: 'division', label: 'Division', sortable: true},
+        {key: 'division', label: 'Division', sortable: true, class: 'division-col'},
         {key: 'author', label: 'Author/Owner', sortable: true},
       ],
+      filters: [
+        {key: 'noc_number', value: null},
+        {key: 'notified_body', value: null, options: [{label: '', value: null}, 'BSI', 'Dekra', 'TUV-SUD']},
+        {key: 'status', value: null},
+        {key: 'submission_title', value: null},
+        {key: 'products', value: null},
+        {key: 'submission_type', value: null},
+        {key: 'division', value: null},
+        {key: 'author', value: null},
+      ]
     }
   },
   methods: {
@@ -93,3 +107,21 @@ export default {
   }
 }
 </script>
+
+<style>
+#simple-apps-table {
+  font-size: .8rem;
+}
+
+.noc-col {
+  width: 6rem;
+}
+
+.nb-col {
+  width: 5rem
+}
+
+.division-col {
+  width: 5rem;
+}
+</style>
