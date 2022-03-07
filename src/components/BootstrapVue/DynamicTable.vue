@@ -8,7 +8,7 @@
          :items="tableData"
          :current-page="currentPage"
          :per-page="perPage"
-         :fields="fields"
+         :fields="tableFields"
          :filter="filters"
          :filter-function="filterProvider"
          @filtered="onFilter"
@@ -19,11 +19,13 @@
          small
         >
           <template v-if="filterable" #top-row>
-            <td v-for="field in fields" :key="field.key">
-              <template v-if="field.key === 'notified_body'">
-                <b-form-select v-model="filters[field.key]" size="sm" :options="nbOptions" :disabled="loading.lazy"/>
-              </template>
-              <template v-else>
+            <!--TODO loop over this.filters instead of this.tableFields-->
+            <td v-for="field in tableFields" :key="field.key">
+                  <!--TODO - do we want to have selects in the filters?-->
+<!--              <template v-if="field.key === 'notified_body'">-->
+<!--                <b-form-select v-model="filters[field.key]" size="sm" :options="nbOptions" :disabled="loading.lazy"/>-->
+<!--              </template>-->
+              <template>
                 <b-input v-model="filters[field.key]" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
               </template>
             </td>
@@ -35,6 +37,7 @@
               </div>
             </div>
           </template>
+          <!--TODO update dynamic slot logic with non-deprecated syntax -->
           <template v-for="(_, name) in $scopedSlots" :slot="name" slot-scope="slotData">
             <slot :name="name" v-bind="slotData"/>
           </template>
@@ -77,7 +80,7 @@
             <h6 class="mt-3 mb-1">Optional/Questions</h6>
             <div>"filters" : bad idea to turn the table data values into objects to determine 'filterability' (tableData[0].noc_number.filterable). Makes things very complicated for the front end</div>
             <div class="ml-5">- If we don't want the front end dev to specify filters through a prop, back end could send "response.data.filters" I guess...</div>
-            <div class="ml-5">- Same goes for Table Headers</div>
+            <div class="ml-5">- Same goes for Table Headers, except we probably need to have the front end specify them so they can assign table column widths</div>
           </b-card>
         </b-collapse>
       </div>
@@ -114,6 +117,11 @@ export default {
       type: Number,
       default: 10
     },
+    tableFields: {
+      type: Array,
+      required: true,
+      default: () => []
+    }
   },
   computed: {
     recordsRange() {
@@ -131,43 +139,20 @@ export default {
       },
       currentPage: 1,
       totalRows: 0,
-      tableData: null,
-      fields: [
-        {key: 'noc_number', label: 'NoC #', sortable: true},
-        {key: 'notified_body', label: 'NB', sortable: true},
-        {key: 'status', label: 'Status', sortable: true},
-        {key: 'submission_title', label: 'Submission Title', sortable: true},
-        {key: 'products', label: 'Product(s)', sortable: true},
-        {key: 'submission_type', label: 'Submission Type', sortable: true},
-        {key: 'division', label: 'Division', sortable: true},
-        {key: 'author', label: 'Author/Owner', sortable: true},
-      ],
-      nbOptions: ['BSI', 'Dekra', 'TUV-SUD'],
-      filters: {
-        noc_number: null,
-        notified_body: null,
-        status: null,
-        submission_title: null,
-        products: null,
-        submission_type: null,
-        division: null,
-        author: null
-      },
+      tableData: [],
+      filters: {},
       selectedCell: null,
     }
   },
   mounted() {
     this.checkPropsForError()
+    this.setFilters()
     this.getTableData()
   },
   methods: {
-    debug(data) {
-      console.log(data)
-    },
     async getTableData() {
       try {
         await this.firstDataBatch()
-        this.setFields()
         if (this.lazy) await this.secondDataBatch()
       }
       catch (error) {
@@ -194,20 +179,17 @@ export default {
       this.loading.lazy = false
       return request
     },
-    setFields() {
-      for (let fieldName in this.tableData[0]) {
-        if (fieldName.filterable) {
-          this.fields.push({
-            key: fieldName.name,
-            label: fieldName.label,
-            sortable: true,
-          })
+    setFilters() {
+      for (let field of this.tableFields) {
+        for (let key in field) {
+          if (key === 'key') this.$set(this.filters, field[key], null)
         }
       }
     },
     resetTable() {
       this.tableData = []
-      this.loading = true
+      this.loading.base = true
+      this.loading.lazy = true
       this.totalRows = 0
       this.currentPage = 1
       this.getTableData()

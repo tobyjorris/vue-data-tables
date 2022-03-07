@@ -15,7 +15,8 @@
                   lazy
                   api-url="/submissions"
                   second-api-url="/submissions-two"
-                  :per-page="5"
+                  :per-page="10"
+                  :table-fields="tableFields"
               >
               <!--Any custom column cells can go here-->
                 <template #cell(noc_number)="data">
@@ -59,6 +60,20 @@ export default {
     PVDynamicTable,
     SimpleAppsTable,
     HalfLazyTable
+  },
+  data() {
+    return {
+      tableFields: [
+        {key: 'noc_number', label: 'NoC #', sortable: true},
+        {key: 'notified_body', label: 'NB', sortable: true},
+        {key: 'status', label: 'Status', sortable: true},
+        {key: 'submission_title', label: 'Submission Title', sortable: true},
+        {key: 'products', label: 'Product(s)', sortable: true},
+        {key: 'submission_type', label: 'Submission Type', sortable: true},
+        {key: 'division', label: 'Division', sortable: true},
+        {key: 'author', label: 'Author/Owner', sortable: true},
+      ],
+    }
   },
   methods: {
     returnStringFromArray(dataArray, keyToPrint) {

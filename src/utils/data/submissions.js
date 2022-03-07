@@ -1,7 +1,7 @@
 export const mockSubmissions = {
   "submissions": [
     {
-      "id": 1,
+      "id": {value: 1, filterable: true},
       "noc_number": "2022-1",
       "notified_body": "bsi",
       "status": "Expert Review In Progress",
@@ -295,5 +295,6 @@ export const mockSubmissions = {
       "author": "System Admin"
     }
   ],
-  "totalRecords": 32
+  "totalRecords": 32,
+  "filters": ''
 }
