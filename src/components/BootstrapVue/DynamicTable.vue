@@ -44,7 +44,7 @@
             </div>
           </template>
           <!--TODO update dynamic slot logic with non-deprecated syntax -->
-          <!--eslint-disable-next-line vue/no-deprecated-dollar-scopedslots-api-->
+          <!--eslint-disable vue/no-deprecated-dollar-scopedslots-api-->
           <template v-for="(_, name) in $scopedSlots" :slot="name" slot-scope="slotData">
             <slot :name="name" v-bind="slotData"/>
           </template>
