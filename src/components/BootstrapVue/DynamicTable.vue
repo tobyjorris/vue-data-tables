@@ -27,12 +27,12 @@
          small
         >
           <template v-if="filterable" #top-row>
-            <td v-for="(filterValue, filterName) in filters" :key="filterName">
-              <template v-if="!!filters[filterName].options">
-                <b-form-select v-model="filters[filterName].value" size="sm" :options="filters[filterName].options" :disabled="loading.lazy"/>
+            <td v-for="(filterValue, filterName) in computedFilters" :key="filterName">
+              <template v-if="!!computedFilters[filterName].options">
+                <b-form-select v-model="computedFilters[filterName].value" size="sm" :options="computedFilters[filterName].options" :disabled="loading.lazy"/>
               </template>
               <template v-else>
-                <b-input v-model="filters[filterName].value" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
+                <b-input v-model="computedFilters[filterName].value" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
               </template>
             </td>
           </template>
@@ -44,6 +44,7 @@
             </div>
           </template>
           <!--TODO update dynamic slot logic with non-deprecated syntax -->
+          <!--eslint-disable-next-line vue/no-deprecated-dollar-scopedslots-api-->
           <template v-for="(_, name) in $scopedSlots" :slot="name" slot-scope="slotData">
             <slot :name="name" v-bind="slotData"/>
           </template>
@@ -141,7 +142,15 @@ export default {
       const resultStart = (this.currentPage -1) * this.perPage + 1
       const resultEnd = this.currentPage === totalPages ? this.totalRows : resultStart + this.perPage - 1
       return `${resultStart} through ${resultEnd}`
-    }
+    },
+    computedFilters: {
+      get: function() {
+        return this.filters
+      },
+      set: function(newFilters) {
+        this.$emit('update:filters', newFilters)
+      },
+    },
   },
   data() {
     return {
@@ -157,6 +166,7 @@ export default {
     }
   },
   mounted() {
+    console.log('slots', this.$slots)
     this.checkPropsForErrors()
     // this.setFilters()
     this.getTableData()
