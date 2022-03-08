@@ -27,12 +27,29 @@
          small
         >
           <template v-if="filterable" #top-row>
-            <td v-for="(filterValue, filterName) in computedFilters" :key="filterName">
-              <template v-if="!!computedFilters[filterName].options">
-                <b-form-select v-model="computedFilters[filterName].value" size="sm" :options="computedFilters[filterName].options" :disabled="loading.lazy"/>
-              </template>
-              <template v-else>
-                <b-input v-model="computedFilters[filterName].value" size="sm" class="input" placeholder="Search"  :disabled="loading.lazy"></b-input>
+            <td v-for="field in tableFields" :key="field.key">
+              <template v-if="shouldRenderFilter(field.key)">
+                <template v-for="filter of computedFilters">
+                  <template v-if="filter.options && filter.key === field.key">
+                    <b-form-select
+                      :key="filter.key"
+                      v-model="filter.value"
+                      size="sm"
+                      :options="filter.options"
+                      :disabled="loading.lazy"
+                    />
+                  </template>
+                  <template v-if="!filter.options && filter.key === field.key">
+                    <b-input
+                      :key="filter.key"
+                      v-model="filter.value"
+                      size="sm"
+                      class="input"
+                      placeholder="Search"
+                      :disabled="loading.lazy"
+                    ></b-input>
+                  </template>
+                </template>
               </template>
             </td>
           </template>
@@ -244,6 +261,12 @@ export default {
           stringData = data.toLowerCase()
         }
       return stringData
+    },
+    shouldRenderFilter(fieldName) {
+      for (let filter of this.computedFilters) {
+        if (fieldName === filter.key) return true
+      }
+      return false
     },
     checkPropsForErrors() {
       const propErrors = []

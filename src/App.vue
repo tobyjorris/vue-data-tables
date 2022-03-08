@@ -18,7 +18,6 @@
         >
           <!--Any custom column cells can go here-->
           <template #cell(noc_number)="data">
-            {{debug(data)}}
             <a href="#">{{data.item.noc_number}}</a>
           </template>
           <template #cell(products)="data">
@@ -95,13 +94,6 @@ export default {
       console.log('data', data)
     },
     returnStringFromArray(dataArray, keyToPrint) {
-      /*
-      Assumes an array with single nested objects in it, ie:
-      const array = [
-        {key: value, key2: value}
-        {key: value, key2: value}
-      ]
-       */
       const stringArray = []
       for (let data of dataArray) {
         stringArray.push(data[keyToPrint])
